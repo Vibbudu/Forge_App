@@ -37,7 +37,7 @@ async def test_identify_material_parses_response():
             service = GeminiService()
             service.client = mock_client
 
-            result = await service.identify_material("base64imagedata")
+            result = await service.identify_material("YmFzZTY0aW1hZ2VkYXRh")
             assert result["identified_material"] == "Mild Steel"
             assert result["confidence"] == "HIGH"
             assert result["material_category"] == "metal"
@@ -76,6 +76,6 @@ async def test_identify_material_handles_low_confidence():
             service = GeminiService()
             service.client = mock_client
 
-            result = await service.identify_material("base64data")
+            result = await service.identify_material("YmFzZTY0ZGF0YQ==")
             assert result["confidence"] == "LOW"
             assert result["identified_material"] == "Unknown Metal"
