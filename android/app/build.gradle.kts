@@ -19,7 +19,7 @@ if (envFile.exists()) {
 }
 
 if (mapsApiKey.isEmpty()) {
-    val localProperties = java.util.Properties()
+    val localProperties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
         localPropertiesFile.inputStream().use { localProperties.load(it) }
@@ -37,9 +37,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
+    // jvmTarget is set by flutter or can be set via compilerOptions if needed
+    // Migrated from deprecated kotlinOptions
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
