@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../config/theme.dart';
 
-/// Forge app bar — construction icon + "Forge" brand text + trailing action.
+/// Forge app bar — custom SVG logo + "Forge" brand text + trailing action.
 /// Matches the mobile_app design: white bg, soft shadow, orange brand.
 class ForgeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
@@ -34,7 +35,14 @@ class ForgeAppBar extends StatelessWidget implements PreferredSizeWidget {
                     child: const Icon(Icons.arrow_back, color: kOnSurface),
                   ),
                 ),
-              const Icon(Icons.construction, color: kForgeOrange, size: 24),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: SvgPicture.asset(
+                  'assets/forge_logo.svg',
+                  width: 32,
+                  height: 32,
+                ),
+              ),
               const SizedBox(width: kSpaceSM),
               Text(
                 title ?? 'Forge',
