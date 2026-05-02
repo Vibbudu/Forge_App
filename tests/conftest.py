@@ -4,17 +4,9 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import AsyncMock, MagicMock, patch
 
-@pytest.fixture(autouse=True)
-def mock_db_connection():
-    """Mock the global database connection to avoid hitting Mongo during lifespan."""
-    with patch("app.main.connect_db", new_callable=AsyncMock):
-        with patch("app.main.disconnect_db", new_callable=AsyncMock):
-            yield
 
-
-@pytest.fixture
-def mock_db():
-    """Mock MongoDB database with materials collection."""
+def _make_mock_db():
+    """Create a reusable mock database with materials collection."""
     db = MagicMock()
 
     # Mock find() cursor chain
@@ -44,6 +36,33 @@ def mock_db():
         "category": "metal",
     })
     return db
+
+
+@pytest.fixture(autouse=True)
+def mock_db_connection():
+    """
+    Mock the entire database layer globally for every test.
+    
+    This patches three things simultaneously:
+    1. connect_db / disconnect_db — prevents the FastAPI lifespan from hitting real Mongo.
+    2. mongodb.db singleton — prevents get_db() from raising 'Database not initialized'.
+    3. get_db itself — returns a mock DB for FastAPI Depends() injection.
+    """
+    fake_db = _make_mock_db()
+
+    with patch("app.main.connect_db", new_callable=AsyncMock):
+        with patch("app.main.disconnect_db", new_callable=AsyncMock):
+            with patch("app.db.mongo.mongodb") as mock_mongodb:
+                mock_mongodb.db = fake_db
+                mock_mongodb.client = MagicMock()
+                with patch("app.db.mongo.get_db", return_value=fake_db):
+                    yield fake_db
+
+
+@pytest.fixture
+def mock_db():
+    """Explicit mock DB fixture for tests that need direct access."""
+    return _make_mock_db()
 
 
 @pytest.fixture
@@ -83,3 +102,4 @@ async def client():
         base_url="http://test",
     ) as ac:
         yield ac
+
