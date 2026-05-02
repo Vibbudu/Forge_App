@@ -110,6 +110,17 @@ def _parse_json_response(raw: str) -> dict | list:
     return json.loads(cleaned)
 
 
+def _detect_image_mime(image_bytes: bytes) -> str:
+    """Detect image MIME type from magic bytes. Falls back to jpeg."""
+    if image_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+        return "image/png"
+    if image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP':
+        return "image/webp"
+    if image_bytes[:3] == b'GIF':
+        return "image/gif"
+    return "image/jpeg"
+
+
 # ---------------------------------------------------------------------------
 # Service
 # ---------------------------------------------------------------------------
@@ -159,10 +170,13 @@ class GeminiService:
         try:
             image_bytes = base64.b64decode(base64_image)
 
+            # Auto-detect MIME type from magic bytes instead of hardcoding jpeg
+            mime_type = _detect_image_mime(image_bytes)
+
             response = await self.client.aio.models.generate_content(
                 model=self.MODEL,
                 contents=[
-                    types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                     PHOTO_ANALYSIS_PROMPT,
                 ],
             )

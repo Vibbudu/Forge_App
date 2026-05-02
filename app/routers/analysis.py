@@ -87,6 +87,24 @@ def _infer_category_from_params(params) -> str | None:
     return None
 
 
+def _infer_environment_from_params(params) -> str:
+    """
+    Infer environment from slider values instead of hardcoding to 'outdoor'.
+    """
+    corr = params.corrosion_resistance
+    thermal = params.thermal_resistance
+
+    if corr >= 8:
+        return "coastal"
+    if thermal >= 8:
+        return "hot"
+    if thermal <= 2:
+        return "cold"
+    if corr <= 3 and thermal <= 4:
+        return "indoor"
+    return "outdoor"
+
+
 @router.post("/full-analysis", response_model=FullAnalysisResponse)
 @limiter.limit("10/minute")
 async def full_analysis(
@@ -124,20 +142,24 @@ async def full_analysis(
         params = body.advanced_params
         # Infer category from slider values instead of hardcoding to "metal"
         inferred_category = _infer_category_from_params(params)
+        # Derive property priorities from which sliders are set highest
+        param_scores = {
+            "tensile_strength": params.tensile_strength,
+            "ductility": params.ductility,
+            "corrosion_resistance": params.corrosion_resistance,
+            "malleability": params.malleability,
+            "thermal_resistance": params.thermal_resistance,
+            "density": params.density,
+        }
+        sorted_priorities = sorted(param_scores, key=param_scores.get, reverse=True)
+
         intent = {
             "material_category": inferred_category,
-            "environment": "outdoor",
+            "environment": _infer_environment_from_params(params),
             "use_case": "specified by advanced parameters",
-            "property_priorities": ["tensile_strength", "corrosion_resistance"],
+            "property_priorities": sorted_priorities,
             "budget_sensitivity": "medium",
-            "inferred_advanced_params": {
-                "tensile_strength": params.tensile_strength,
-                "ductility": params.ductility,
-                "corrosion_resistance": params.corrosion_resistance,
-                "malleability": params.malleability,
-                "thermal_resistance": params.thermal_resistance,
-                "density": params.density,
-            },
+            "inferred_advanced_params": param_scores,
             "conflict_check": {"has_conflicts": False, "conflicts": []},
         }
         detected_conflicts = materials_service.detect_conflicts(params.model_dump())
@@ -210,7 +232,7 @@ async def full_analysis(
         raw_vendors = await vendor_service.search_vendors(
             material_name=primary["name"], lat=body.location.lat, lng=body.location.lng
         )
-        vendor_result = VendorResult(vendors=[Vendor(**v) for v in raw_vendors], search_radius_km=10)
+        vendor_result = VendorResult(vendors=[Vendor(**v) for v in raw_vendors], search_radius_km=body.location_radius_km if hasattr(body, 'location_radius_km') else 10)
     except Exception as e:
         logger.warning(f"Vendor search failed, returning empty: {e}")
         vendor_result = VendorResult(vendors=[], search_radius_km=10)

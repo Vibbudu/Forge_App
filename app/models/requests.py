@@ -78,7 +78,7 @@ class VendorRequest(BaseModel):
     material_name: str = Field(..., min_length=1, max_length=200)
     location: Location
     radius_km: int = Field(10, ge=1, le=50)
-    min_rating: float = Field(4.0, ge=1.0, le=5.0)
+    min_rating: float = Field(3.0, ge=1.0, le=5.0)
 
 
 class PhotoIdentifyRequest(BaseModel):
