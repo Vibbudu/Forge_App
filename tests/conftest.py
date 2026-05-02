@@ -87,7 +87,18 @@ def mock_gemini():
         })
         mock.rank_candidates = AsyncMock(return_value=["316 Stainless Steel"])
         mock.generate_explanation = AsyncMock(
-            return_value="316 Stainless Steel performs well in coastal environments due to its molybdenum content."
+            return_value={
+                "explanation": "316 Stainless Steel performs well in coastal environments due to its molybdenum content.",
+                "properties": {
+                    "tensile_strength": 9,
+                    "ductility": 6,
+                    "corrosion_resistance": 9,
+                    "malleability": 5,
+                    "thermal_resistance": 7,
+                    "density": 6,
+                    "surface_finish": "matte"
+                }
+            }
         )
         yield mock
 
