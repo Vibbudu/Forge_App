@@ -18,36 +18,63 @@ class MaterialsService:
         properties: dict,
         limit: int = 10,
     ) -> list[dict]:
-        """Query materials by category and property filters with tolerance."""
+        """
+        Query materials by category, then score and rank by property similarity.
+
+        Previous approach used MongoDB $and filters requiring ALL properties
+        to exceed thresholds simultaneously — this eliminated everything
+        except stainless steel. New approach: fetch a broad pool by category,
+        then sort by best property match in Python.
+        """
         try:
             query: dict = {}
 
             if category and category != "other":
                 query["category"] = {"$regex": category, "$options": "i"}
 
-            property_filters = []
-            for prop, value in properties.items():
-                if value and value > 1:
-                    tolerance = 2
-                    property_filters.append(
-                        {f"properties.{prop}": {"$gte": max(1, value - tolerance)}}
-                    )
-
-            if property_filters:
-                query["$and"] = property_filters
-
-            # Correct Motor async pattern: chain .to_list(length=N)
-            results = await db["materials"].find(query).limit(limit).to_list(length=limit)
+            # Fetch a broad pool of candidates (no property filtering in DB)
+            pool_size = max(limit * 2, 20)
+            results = await db["materials"].find(query).limit(pool_size).to_list(length=pool_size)
 
             for r in results:
                 r.pop("_id", None)
 
-            logger.info(f"Materials query returned {len(results)} candidates")
+            # If we have property targets, score and sort by similarity
+            if properties and results:
+                results = self._score_and_sort(results, properties, limit)
+            else:
+                results = results[:limit]
+
+            logger.info(f"Materials query returned {len(results)} candidates (category={category})")
             return results
 
         except Exception as e:
             logger.error(f"Materials DB query failed: {e}")
             raise DatabaseException(f"Material query failed: {str(e)}")
+
+    def _score_and_sort(self, candidates: list[dict], target_props: dict, limit: int) -> list[dict]:
+        """
+        Score candidates by how closely their properties match the target.
+        Uses sum of squared differences (lower = better match).
+        """
+        scored = []
+        for mat in candidates:
+            mat_props = mat.get("properties", {})
+            score = 0
+            matched = 0
+            for prop, target_val in target_props.items():
+                if not isinstance(target_val, (int, float)):
+                    continue
+                mat_val = mat_props.get(prop, 5)  # default to midpoint
+                if isinstance(mat_val, (int, float)):
+                    score += (target_val - mat_val) ** 2
+                    matched += 1
+            # Normalize: materials with more matching properties rank higher
+            avg_score = score / max(matched, 1)
+            scored.append((avg_score, mat))
+
+        scored.sort(key=lambda x: x[0])
+        return [mat for _, mat in scored[:limit]]
 
     async def get_by_name(self, db: AsyncIOMotorDatabase, name: str) -> dict:
         """Look up a single material by name (case-insensitive)."""
