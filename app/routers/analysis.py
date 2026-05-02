@@ -33,13 +33,14 @@ from app.core.exceptions import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Response cache: identical queries within 5 minutes don't re-call Gemini
-_response_cache = TTLCache(maxsize=100, ttl=300)
+# Response cache: identical queries within 60 seconds don't re-call Gemini
+_response_cache = TTLCache(maxsize=100, ttl=60)
 
 
 def _cache_key(request: FullAnalysisRequest) -> str:
     """Generate a cache key from the request."""
-    key_data = f"{request.input_type}{request.text}{request.advanced_params}{request.location}"
+    photo_hash = hashlib.md5(request.photo_base64[:100].encode()).hexdigest() if request.photo_base64 else "none"
+    key_data = f"{request.input_type}{request.text}{request.advanced_params}{request.location}{request.language}{photo_hash}"
     return hashlib.md5(key_data.encode()).hexdigest()
 
 
