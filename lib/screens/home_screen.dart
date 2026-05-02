@@ -6,9 +6,6 @@ import '../config/theme.dart';
 import '../widgets/forge_app_bar.dart';
 
 import '../widgets/search_bar_widget.dart';
-import '../widgets/logistics_card.dart';
-import '../widgets/market_pulse_card.dart';
-import '../widgets/project_card.dart';
 import 'result_screen.dart';
 import 'advanced_config_screen.dart';
 import '../services/api_service.dart';
@@ -86,6 +83,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _addFile() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('File upload coming soon')),
+    );
+  }
+
   Future<void> _analyze({
     required String inputType,
     String? text,
@@ -139,9 +142,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.only(top: kSpaceLG, bottom: kSpaceXL * 3),
+              padding: const EdgeInsets.only(top: kSpaceXL, bottom: kSpaceXL * 3),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Search Section
                   Padding(
@@ -153,10 +157,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           onSubmit: _submitText,
                           onMicTap: _toggleVoice,
                           onCameraTap: _takePhoto,
+                          onAddTap: _addFile,
                         ),
                         if (_isListening)
                           Positioned(
-                            right: 64, // Positioned near the mic button
+                            right: 96, // Positioned near the mic button
                             top: 12,
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -167,68 +172,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: kSpaceSM),
-                  Center(
-                    child: TextButton(
-                      onPressed: _navigateToAdvanced,
-                      style: TextButton.styleFrom(
-                        foregroundColor: kPrimary,
-                        textStyle: kLabelMd.copyWith(decoration: TextDecoration.underline, decorationThickness: 2),
+                  const SizedBox(height: kSpaceXL),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: kSpaceMarginMobile),
+                    child: Center(
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _navigateToAdvanced,
+                          icon: const Icon(Icons.tune),
+                          label: const Text('Advanced Configuration Mode'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
+                            backgroundColor: kSurfaceContainerLowest,
+                            foregroundColor: kPrimary,
+                            elevation: 2,
+                            side: const BorderSide(color: kOutlineVariant),
+                            textStyle: kLabelMd.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
-                      child: const Text('Advanced Mode'),
-                    ),
-                  ),
-                  const SizedBox(height: kSpaceMD),
-
-                  // Bento Layout: Insights
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: kSpaceMarginMobile),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        if (constraints.maxWidth >= 600) {
-                          return const Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: LogisticsCard()),
-                              SizedBox(width: kSpaceLG),
-                              Expanded(child: MarketPulseCard()),
-                            ],
-                          );
-                        }
-                        return const Column(
-                          children: [
-                            LogisticsCard(),
-                            SizedBox(height: kSpaceLG),
-                            MarketPulseCard(),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: kSpaceLG),
-
-                  // Recent Projects Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: kSpaceMarginMobile),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Active Projects', style: kHeadlineMd),
-                        Text('View All', style: kLabelMd.copyWith(color: kPrimary)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: kSpaceMD),
-                  SizedBox(
-                    height: 220,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: kSpaceMarginMobile),
-                      children: const [
-                        ProjectCard(title: 'Skyline Residency', subtitle: '64% Completion • On Track', imageColor: Color(0xFFE2E8F0)),
-                        SizedBox(width: kSpaceMD),
-                        ProjectCard(title: 'Metro Bridge Retrofit', subtitle: '22% Completion • 3 Alerts', imageColor: Color(0xFFCBD5E1)),
-                      ],
                     ),
                   ),
                 ],

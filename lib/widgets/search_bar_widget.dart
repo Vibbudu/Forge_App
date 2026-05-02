@@ -8,6 +8,7 @@ class ForgeSearchBar extends StatelessWidget {
   final VoidCallback? onSubmit;
   final VoidCallback? onMicTap;
   final VoidCallback? onCameraTap;
+  final VoidCallback? onAddTap;
 
   const ForgeSearchBar({
     super.key,
@@ -15,6 +16,7 @@ class ForgeSearchBar extends StatelessWidget {
     this.onSubmit,
     this.onMicTap,
     this.onCameraTap,
+    this.onAddTap,
   });
 
   @override
@@ -48,6 +50,7 @@ class ForgeSearchBar extends StatelessWidget {
               ),
             ),
           ),
+          _ActionIcon(icon: Icons.add, onTap: onAddTap),
           _ActionIcon(icon: Icons.mic, onTap: onMicTap),
           _ActionIcon(icon: Icons.photo_camera, onTap: onCameraTap),
           const SizedBox(width: kSpaceSM),
