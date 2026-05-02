@@ -83,10 +83,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _addFile() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('File upload coming soon')),
-    );
+  Future<void> _addFile() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      final base64Image = base64Encode(bytes);
+      await _analyze(inputType: 'photo', photoBase64: base64Image);
+    }
   }
 
   Future<void> _analyze({
