@@ -37,8 +37,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // jvmTarget is set by flutter or can be set via compilerOptions if needed
-    // Migrated from deprecated kotlinOptions
+    // jvmTarget is set by kotlin.jvmToolchain below
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
@@ -64,4 +63,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+kotlin {
+    jvmToolchain(17)
 }
