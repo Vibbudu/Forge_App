@@ -7,13 +7,25 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Read Google Maps API key from local.properties
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.inputStream().use { localProperties.load(it) }
+// Read Google Maps API key from .env or local.properties
+var mapsApiKey = ""
+val envFile = rootProject.file("../.env")
+if (envFile.exists()) {
+    envFile.forEachLine {
+        if (it.startsWith("GOOGLE_MAPS_API_KEY=")) {
+            mapsApiKey = it.substringAfter("=").trim()
+        }
+    }
 }
-val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
+
+if (mapsApiKey.isEmpty()) {
+    val localProperties = java.util.Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+    mapsApiKey = localProperties.getProperty("MAPS_API_KEY", "")
+}
 
 android {
     namespace = "com.forge.forge_app"
