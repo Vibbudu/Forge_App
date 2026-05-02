@@ -130,73 +130,80 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const ForgeAppBar(),
-      body: _isLoading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(color: kPrimary),
-                  const SizedBox(height: kSpaceMD),
-                  Text('Analyzing with Forge Intelligence...', style: kLabelMd.copyWith(color: kSecondary)),
-                ],
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.only(top: kSpaceXL, bottom: kSpaceXL * 3),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Search Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: kSpaceMarginMobile),
-                    child: Stack(
-                      children: [
-                        ForgeSearchBar(
-                          controller: _queryController,
-                          onSubmit: _submitText,
-                          onMicTap: _toggleVoice,
-                          onCameraTap: _takePhoto,
-                          onAddTap: _addFile,
-                        ),
-                        if (_isListening)
-                          Positioned(
-                            right: 96, // Positioned near the mic button
-                            top: 12,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: kError, borderRadius: BorderRadius.circular(100)),
-                              child: Text('Listening...', style: kDataXs.copyWith(color: Colors.white)),
-                            ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _isLoading
+            ? Center(
+                key: const ValueKey('loading'),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(color: kPrimary),
+                    const SizedBox(height: kSpaceMD),
+                    Text('Analyzing with Forge Intelligence...', style: kLabelMd.copyWith(color: kSecondary)),
+                  ],
+                ),
+              )
+            : Center(
+                key: const ValueKey('content'),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: kSpaceMarginMobile, vertical: kSpaceXL),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'How can I help you?',
+                        style: kDisplayLg,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: kSpaceXL),
+                      // Search Section
+                      Stack(
+                        children: [
+                          ForgeSearchBar(
+                            controller: _queryController,
+                            onSubmit: _submitText,
+                            onMicTap: _toggleVoice,
+                            onCameraTap: _takePhoto,
+                            onAddTap: _addFile,
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: kSpaceXL),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: kSpaceMarginMobile),
-                    child: Center(
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _navigateToAdvanced,
-                          icon: const Icon(Icons.tune),
-                          label: const Text('Advanced Configuration Mode'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
-                            backgroundColor: kSurfaceContainerLowest,
-                            foregroundColor: kPrimary,
-                            elevation: 2,
-                            side: const BorderSide(color: kOutlineVariant),
-                            textStyle: kLabelMd.copyWith(fontWeight: FontWeight.bold),
+                          if (_isListening)
+                            Positioned(
+                              right: 96, // Positioned near the mic button
+                              top: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(color: kError, borderRadius: BorderRadius.circular(100)),
+                                child: Text('Listening...', style: kDataXs.copyWith(color: Colors.white)),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: kSpaceXL),
+                      Center(
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _navigateToAdvanced,
+                            icon: const Icon(Icons.tune),
+                            label: const Text('Advanced Configuration Mode'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
+                              backgroundColor: kSurfaceContainerLowest,
+                              foregroundColor: kPrimary,
+                              elevation: 2,
+                              side: const BorderSide(color: kOutlineVariant),
+                              textStyle: kLabelMd.copyWith(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }
