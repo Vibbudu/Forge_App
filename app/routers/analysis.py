@@ -105,6 +105,37 @@ def _infer_environment_from_params(params) -> str:
     return "outdoor"
 
 
+# Map text-based property values from MongoDB to integer 1-10 scale
+_TEXT_TO_INT = {
+    "excellent": 9, "very high": 9, "outstanding": 10,
+    "high": 8, "good": 7, "above average": 7,
+    "moderate": 5, "medium": 5, "average": 5,
+    "fair": 4, "below average": 3,
+    "low": 3, "poor": 2, "very low": 1, "none": 1,
+}
+
+
+def _safe_int_prop(value, default: int = 5) -> int:
+    """
+    Safely convert a MongoDB property value to an integer.
+    Some materials store properties as strings ('excellent', 'high')
+    instead of numbers. This prevents Pydantic validation crashes.
+    """
+    if isinstance(value, int):
+        return max(1, min(10, value))
+    if isinstance(value, float):
+        return max(1, min(10, int(round(value))))
+    if isinstance(value, str):
+        # Try parsing as a number first
+        try:
+            return max(1, min(10, int(float(value))))
+        except (ValueError, TypeError):
+            pass
+        # Map text descriptions to integers
+        return _TEXT_TO_INT.get(value.lower().strip(), default)
+    return default
+
+
 @router.post("/full-analysis", response_model=FullAnalysisResponse)
 @limiter.limit("10/minute")
 async def full_analysis(
@@ -265,13 +296,13 @@ async def full_analysis(
         name=primary["name"], category=primary.get("category", "Unknown"),
         explanation=explanation, composition=primary.get("composition", {}),
         properties=MaterialProperties(
-            tensile_strength=props.get("tensile_strength", 5),
-            ductility=props.get("ductility", 5),
-            corrosion_resistance=props.get("corrosion_resistance", 5),
-            malleability=props.get("malleability", 5),
-            thermal_resistance=props.get("thermal_resistance", 5),
-            density=props.get("density", 5),
-            surface_finish=props.get("surface_finish", "matte"),
+            tensile_strength=_safe_int_prop(props.get("tensile_strength", 5)),
+            ductility=_safe_int_prop(props.get("ductility", 5)),
+            corrosion_resistance=_safe_int_prop(props.get("corrosion_resistance", 5)),
+            malleability=_safe_int_prop(props.get("malleability", 5)),
+            thermal_resistance=_safe_int_prop(props.get("thermal_resistance", 5)),
+            density=_safe_int_prop(props.get("density", 5)),
+            surface_finish=str(props.get("surface_finish", "matte")),
         ),
         grade=primary.get("grade"),
     )
