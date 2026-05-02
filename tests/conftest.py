@@ -4,6 +4,13 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import AsyncMock, MagicMock, patch
 
+@pytest.fixture(autouse=True)
+def mock_db_connection():
+    """Mock the global database connection to avoid hitting Mongo during lifespan."""
+    with patch("app.main.connect_db", new_callable=AsyncMock):
+        with patch("app.main.disconnect_db", new_callable=AsyncMock):
+            yield
+
 
 @pytest.fixture
 def mock_db():
