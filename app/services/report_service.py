@@ -39,9 +39,10 @@ class ReportService:
         if alternatives:
             story.append(Paragraph("Alternative Materials", styles["Heading2"]))
             for alt in alternatives:
+                cost_diff = alt.get('cost_difference', '').replace('₹', 'Rs. ')
                 story.append(Paragraph(
                     f"• {alt.get('name', 'N/A')}: {alt.get('reason', '')} "
-                    f"({alt.get('cost_difference', '')})",
+                    f"({cost_diff})",
                     styles["Normal"]
                 ))
             story.append(Spacer(1, 12))
@@ -79,13 +80,19 @@ class ReportService:
             story.append(Paragraph("Cost Comparison", styles["Heading2"]))
             cost_data = [["Material", "Price Range", "Tier"]]
             for entry in comparison:
-                cost_data.append([entry["name"], entry["price_display"], entry["tier"]])
+                price_text = entry["price_display"].replace("₹", "Rs. ")
+                cost_data.append([
+                    Paragraph(entry["name"], styles["Normal"]),
+                    Paragraph(price_text, styles["Normal"]),
+                    Paragraph(entry["tier"], styles["Normal"])
+                ])
 
             table = Table(cost_data, colWidths=[2.5*inch, 2*inch, 1.5*inch])
             table.setStyle(TableStyle([
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A1A2E")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, -1), 10),
                 ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
