@@ -186,11 +186,14 @@ class _ResultScreenState extends State<ResultScreen> {
 
             // Failure Warning
             if (fail.failureModes.isNotEmpty) ...[
-              FailureWarningCard(
-                title: 'Failure Mode: ${fail.failureModes.first.type}',
-                description: fail.failureModes.first.description,
-              ),
-              const SizedBox(height: kSpaceLG),
+              ...fail.failureModes.map((mode) => Padding(
+                padding: const EdgeInsets.only(bottom: kSpaceSM),
+                child: FailureWarningCard(
+                  title: 'Failure Mode: ${mode.type} (${mode.severity})',
+                  description: mode.description,
+                ),
+              )),
+              const SizedBox(height: kSpaceSM),
             ],
 
             // Properties
