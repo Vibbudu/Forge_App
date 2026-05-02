@@ -9,6 +9,7 @@ import '../widgets/search_bar_widget.dart';
 import 'result_screen.dart';
 import 'advanced_config_screen.dart';
 import 'materials_screen.dart';
+import 'history_screen.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 
@@ -138,6 +139,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _navigateToHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const HistoryScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,6 +227,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             onPressed: _navigateToMaterials,
                             icon: const Icon(Icons.inventory_2_outlined),
                             label: const Text('Browse Materials Database'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
+                              foregroundColor: kSecondary,
+                              side: const BorderSide(color: kOutlineVariant),
+                              textStyle: kLabelMd,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: kSpaceMD),
+                      Center(
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _navigateToHistory,
+                            icon: const Icon(Icons.history),
+                            label: const Text('Saved Analyses'),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
                               foregroundColor: kSecondary,

@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'config/theme.dart';
 import 'screens/main_screen.dart';
+import 'services/auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,9 +13,10 @@ Future<void> main() async {
   // Unlock highest available refresh rate (120Hz / 90Hz)
   try {
     await FlutterDisplayMode.setHighRefreshRate();
-  } catch (_) {
-    // Silently ignore on platforms that don't support it
-  }
+  } catch (_) {}
+
+  // Auto-login to get auth token
+  await AuthService().login();
 
   runApp(const ForgeApp());
 }

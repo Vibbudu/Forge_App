@@ -10,6 +10,8 @@ import '../config/theme.dart';
 import '../config/constants.dart';
 import '../models/forge_response.dart';
 import '../widgets/forge_app_bar.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 import '../widgets/standards_chip.dart';
 import '../widgets/failure_warning_card.dart';
@@ -30,6 +32,8 @@ class _ResultScreenState extends State<ResultScreen> {
 
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
+  bool _isSaved = false;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -76,11 +80,7 @@ class _ResultScreenState extends State<ResultScreen> {
     try {
       final response = await http.post(
         Uri.parse('$kApiBaseUrl$kEndpointReport/generate'),
-        headers: {'Content-Type': 'application/json'},
-        // We have to recreate the raw response JSON since we don't store it exactly
-        // But the document says "Paste the exact response object received from /api/full-analysis"
-        // Let's serialize the current widget.data object back to JSON (we might need a toJson)
-        // Wait! The document says "exact response object". I'll add toJson to ForgeResponse.
+        headers: AuthService().authHeaders,
         body: jsonEncode(widget.data.toJson()),
       );
 
@@ -103,6 +103,29 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
+  Future<void> _saveProject() async {
+    if (_isSaving || _isSaved) return;
+    setState(() => _isSaving = true);
+
+    try {
+      await ApiService().saveProject(widget.data);
+      if (!mounted) return;
+      setState(() {
+        _isSaved = true;
+        _isSaving = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Analysis saved to projects!')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final rec = widget.data.recommendation;
@@ -118,6 +141,38 @@ class _ResultScreenState extends State<ResultScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // HIGH Risk Level Banner
+            if (fail.riskLevel.toUpperCase() == 'HIGH') ...[
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(kRadiusMD),
+                  border: const Border(left: BorderSide(color: kError, width: 4)),
+                ),
+                padding: const EdgeInsets.all(kSpaceMD),
+                child: Row(
+                  children: [
+                    const Icon(Icons.dangerous, color: kError, size: 28),
+                    const SizedBox(width: kSpaceMD),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('⚠️ HIGH RISK Material', style: kTitleSm.copyWith(color: const Color(0xFF7F1D1D))),
+                          const SizedBox(height: 4),
+                          Text(
+                            'This material has severe failure risks for the intended use. Review failure modes below carefully.',
+                            style: kDataXs.copyWith(color: const Color(0xFF991B1B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: kSpaceLG),
+            ],
+
             // Conflict Warning
             if (conflict.detected) ...[
               Container(
@@ -295,22 +350,37 @@ class _ResultScreenState extends State<ResultScreen> {
                     style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: kSpaceMD)),
                   ),
                 ),
-                if (widget.data.reportAvailable) ...[
-                  const SizedBox(width: kSpaceSM),
-                  Expanded(
-                    flex: 1,
-                    child: OutlinedButton(
-                      onPressed: _exportPdf,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
-                        side: const BorderSide(color: kOutlineVariant),
-                      ),
-                      child: const Icon(Icons.picture_as_pdf, color: kSecondary),
+                const SizedBox(width: kSpaceSM),
+                Expanded(
+                  flex: 1,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _saveProject,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
+                      backgroundColor: _isSaved ? const Color(0xFF16A34A) : kPrimary,
                     ),
+                    child: _isSaving
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Icon(_isSaved ? Icons.check : Icons.save, color: Colors.white),
                   ),
-                ],
+                ),
               ],
             ),
+            if (widget.data.reportAvailable) ...[
+              const SizedBox(height: kSpaceSM),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _exportPdf,
+                  icon: const Icon(Icons.picture_as_pdf, color: kSecondary),
+                  label: Text('Download PDF Report', style: kLabelMd.copyWith(color: kSecondary)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
+                    side: const BorderSide(color: kOutlineVariant),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
