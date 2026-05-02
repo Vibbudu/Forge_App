@@ -191,6 +191,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: FailureWarningCard(
                   title: 'Failure Mode: ${mode.type} (${mode.severity})',
                   description: mode.description,
+                  severity: mode.severity,
                 ),
               )),
               const SizedBox(height: kSpaceSM),
