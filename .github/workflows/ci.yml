@@ -1,0 +1,40 @@
+name: Forge Backend CI
+
+on:
+  push:
+    branches: [ "main", "backend" ]
+  pull_request:
+    branches: [ "main", "backend" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    # Provide dummy environment variables so pydantic-settings can instantiate 
+    # the config without crashing during the test suite.
+    env:
+      GEMINI_API_KEY: "dummy_gemini_key"
+      SARVAM_API_KEY: "dummy_sarvam_key"
+      GOOGLE_MAPS_API_KEY: "dummy_gmaps_key"
+      MONGODB_URI: "mongodb://localhost:27017"
+      MONGODB_DB_NAME: "forge_test_db"
+      ENVIRONMENT: "testing"
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+        cache: 'pip' # caching pip dependencies to speed up the workflow
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run pytest test suite
+      run: |
+        pytest -v
