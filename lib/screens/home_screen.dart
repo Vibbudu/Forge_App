@@ -8,6 +8,7 @@ import '../widgets/forge_app_bar.dart';
 import '../widgets/search_bar_widget.dart';
 import 'result_screen.dart';
 import 'advanced_config_screen.dart';
+import 'materials_screen.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 
@@ -130,6 +131,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _navigateToMaterials() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MaterialsScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -199,6 +207,23 @@ class _HomeScreenState extends State<HomeScreen> {
                               elevation: 2,
                               side: const BorderSide(color: kOutlineVariant),
                               textStyle: kLabelMd.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: kSpaceMD),
+                      Center(
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _navigateToMaterials,
+                            icon: const Icon(Icons.inventory_2_outlined),
+                            label: const Text('Browse Materials Database'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
+                              foregroundColor: kSecondary,
+                              side: const BorderSide(color: kOutlineVariant),
+                              textStyle: kLabelMd,
                             ),
                           ),
                         ),
