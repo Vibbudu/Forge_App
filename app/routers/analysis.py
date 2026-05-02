@@ -224,10 +224,12 @@ async def full_analysis(
     environment = intent.get("environment", "outdoor")
     use_case = intent.get("use_case", "general construction")
 
-    # --- Step 4: Generate explanation ---
-    explanation = await gemini_service.generate_explanation(
+    # --- Step 4: Generate explanation and estimate missing properties ---
+    explanation_data = await gemini_service.generate_explanation(
         material_name=primary["name"], use_case=use_case, environment=environment
     )
+    explanation = explanation_data.get("explanation", f"{primary['name']} is a suitable choice.")
+    estimated_props = explanation_data.get("properties", {})
 
     # --- Step 5: Standards check ---
     raw_standards = list(get_standards(primary["name"], environment))
@@ -292,18 +294,29 @@ async def full_analysis(
         logger.warning(f"TTS generation failed, continuing without audio: {e}")
 
     # --- Build response ---
-    props = primary.get("properties", {})
+    db_props = primary.get("properties", {})
+    props = {}
+    for key in ["tensile_strength", "ductility", "corrosion_resistance", "malleability", "thermal_resistance", "density"]:
+        val = db_props.get(key)
+        if val is None:
+            val = estimated_props.get(key, 5)
+        props[key] = val
+        
+    surface_finish_val = db_props.get("surface_finish")
+    if not surface_finish_val:
+        surface_finish_val = estimated_props.get("surface_finish", "matte")
+        
     recommendation = MaterialRecommendation(
         name=primary["name"], category=primary.get("category", "Unknown"),
         explanation=explanation, composition=primary.get("composition", {}),
         properties=MaterialProperties(
-            tensile_strength=_safe_int_prop(props.get("tensile_strength", 5)),
-            ductility=_safe_int_prop(props.get("ductility", 5)),
-            corrosion_resistance=_safe_int_prop(props.get("corrosion_resistance", 5)),
-            malleability=_safe_int_prop(props.get("malleability", 5)),
-            thermal_resistance=_safe_int_prop(props.get("thermal_resistance", 5)),
-            density=_safe_int_prop(props.get("density", 5)),
-            surface_finish=str(props.get("surface_finish", "matte")),
+            tensile_strength=_safe_int_prop(props["tensile_strength"]),
+            ductility=_safe_int_prop(props["ductility"]),
+            corrosion_resistance=_safe_int_prop(props["corrosion_resistance"]),
+            malleability=_safe_int_prop(props["malleability"]),
+            thermal_resistance=_safe_int_prop(props["thermal_resistance"]),
+            density=_safe_int_prop(props["density"]),
+            surface_finish=str(surface_finish_val),
         ),
         grade=primary.get("grade"),
     )

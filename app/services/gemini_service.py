@@ -76,10 +76,26 @@ Return format: ["first_choice", "second_choice", "third_choice"]
 EXPLANATION_PROMPT = """
 You are a construction materials expert explaining a recommendation to a {experience_level} user.
 
-Write a clear, practical explanation (2-3 sentences) for why {material_name} is the best choice for this use case: {use_case} in {environment} conditions.
+Analyze the material: {material_name} for the use case: {use_case} in {environment} conditions.
 
-Be specific. Mention one key property that makes this material suitable. Do not use jargon the user would not understand.
-Write only the explanation. No preamble.
+Return ONLY a valid JSON object containing:
+1. A clear, practical explanation (2-3 sentences) for why it is the best choice. Mention a key property. Do not use excessive jargon.
+2. Estimated physical properties for this material on a 1-10 scale.
+
+Return format:
+{{
+  "explanation": "your explanation here",
+  "properties": {{
+    "tensile_strength": 1-10,
+    "ductility": 1-10,
+    "corrosion_resistance": 1-10,
+    "malleability": 1-10,
+    "thermal_resistance": 1-10,
+    "density": 1-10,
+    "surface_finish": "matte | glossy | brushed"
+  }}
+}}
+No explanation. No markdown. Just the JSON.
 """
 
 PHOTO_ANALYSIS_PROMPT = """
@@ -235,8 +251,8 @@ class GeminiService:
         use_case: str,
         environment: str,
         experience_level: str = "professional",
-    ) -> str:
-        """Generate a human-readable explanation for a material recommendation."""
+    ) -> dict:
+        """Generate a human-readable explanation and estimate properties for a material recommendation."""
         try:
             prompt = EXPLANATION_PROMPT.format(
                 material_name=material_name,
@@ -248,7 +264,10 @@ class GeminiService:
                 model=self.MODEL,
                 contents=prompt,
             )
-            return response.text.strip()
+            return _parse_json_response(response.text)
+        except json.JSONDecodeError as e:
+            logger.error(f"Gemini explanation returned invalid JSON: {e}")
+            raise GeminiException(f"Invalid JSON from explanation: {str(e)}")
         except Exception as e:
             logger.error(f"Gemini explanation generation failed: {e}")
             raise GeminiException(str(e))

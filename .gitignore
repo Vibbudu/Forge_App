@@ -38,3 +38,7 @@ Thumbs.db
 
 # Reports
 *.pdf
+
+# Documentation (ignore all md except README)
+*.md
+!README.md
