@@ -43,6 +43,50 @@ def _cache_key(request: FullAnalysisRequest) -> str:
     return hashlib.md5(key_data.encode()).hexdigest()
 
 
+def _infer_category_from_params(params) -> str | None:
+    """
+    Infer material category from slider values instead of hardcoding to 'metal'.
+    Returns None to search across all categories when no strong signal exists.
+    """
+    ts = params.tensile_strength
+    ductility = params.ductility
+    corr = params.corrosion_resistance
+    thermal = params.thermal_resistance
+    density = params.density
+    finish = getattr(params, "surface_finish", "matte")
+
+    # Strong wood signals: low tensile, low density, moderate thermal
+    if ts <= 4 and density <= 4 and thermal <= 5:
+        return "wood"
+
+    # Strong paint signals: very low tensile, very low density, surface finish focus
+    if ts <= 2 and density <= 2:
+        return "paint"
+
+    # Strong concrete signals: high density, high tensile, low ductility
+    if density >= 7 and ts >= 7 and ductility <= 3:
+        return "concrete"
+
+    # Strong glass signals: high corrosion resistance, low ductility, glossy finish
+    if corr >= 8 and ductility <= 2 and finish == "glossy":
+        return "glass"
+
+    # Strong insulation signals: high thermal, very low density, low tensile
+    if thermal >= 8 and density <= 3 and ts <= 3:
+        return "insulation"
+
+    # Strong ceramic signals: high thermal, high density, low ductility
+    if thermal >= 8 and density >= 7 and ductility <= 3:
+        return "ceramic"
+
+    # Strong metal signals: high tensile, high density, moderate-high ductility
+    if ts >= 7 and density >= 6:
+        return "metal"
+
+    # No strong signal — search ALL categories and let Gemini rank
+    return None
+
+
 @router.post("/full-analysis", response_model=FullAnalysisResponse)
 @limiter.limit("10/minute")
 async def full_analysis(
@@ -78,8 +122,10 @@ async def full_analysis(
 
     elif body.input_type == InputType.ADVANCED:
         params = body.advanced_params
+        # Infer category from slider values instead of hardcoding to "metal"
+        inferred_category = _infer_category_from_params(params)
         intent = {
-            "material_category": "metal",
+            "material_category": inferred_category,
             "environment": "outdoor",
             "use_case": "specified by advanced parameters",
             "property_priorities": ["tensile_strength", "corrosion_resistance"],
