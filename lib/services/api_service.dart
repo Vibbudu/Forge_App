@@ -149,4 +149,35 @@ class ApiService {
       throw Exception(errorMessage);
     }
   }
+  /// Multimodal chat with image and text
+  Future<Map<String, dynamic>> multimodalChat({
+    String? imageBase64,
+    required String text,
+    String responseMode = 'CHAT',
+    String language = 'en-IN',
+  }) async {
+    final Map<String, dynamic> body = {
+      'text': text,
+      'response_mode': responseMode,
+      'language': language,
+    };
+    if (imageBase64 != null) body['image_base_64'] = imageBase64;
+
+    final response = await http.post(
+      Uri.parse('$kApiBaseUrl/api/chat/multimodal'),
+      headers: _auth.authHeaders,
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      String errorMessage = 'Chat failed. Status: ${response.statusCode}';
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData['error'] != null) errorMessage = errorData['error'];
+      } catch (_) {}
+      throw Exception(errorMessage);
+    }
+  }
 }
