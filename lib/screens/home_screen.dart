@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:record/record.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import '../config/theme.dart';
 import '../widgets/forge_app_bar.dart';
 
@@ -22,56 +24,97 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _queryController = TextEditingController();
+  final AudioRecorder _audioRecorder = AudioRecorder();
 
   bool _isLoading = false;
-
-  // Speech to Text
-  final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
+  String _selectedLanguage = 'en-IN';
+  String? _recordingPath;
 
-  @override
-  void initState() {
-    super.initState();
-    _initSpeech();
-  }
-
-  void _initSpeech() async {
-    await _speech.initialize();
-  }
+  final List<Map<String, String>> _languages = [
+    {'code': 'en-IN', 'name': 'English'},
+    {'code': 'hi-IN', 'name': 'Hindi'},
+    {'code': 'kn-IN', 'name': 'Kannada'},
+    {'code': 'ta-IN', 'name': 'Tamil'},
+    {'code': 'te-IN', 'name': 'Telugu'},
+    {'code': 'ml-IN', 'name': 'Malayalam'},
+  ];
 
   @override
   void dispose() {
     _queryController.dispose();
+    _audioRecorder.dispose();
     super.dispose();
   }
 
   Future<void> _submitText() async {
     if (_queryController.text.trim().isEmpty) return;
-    await _analyze(inputType: 'text', text: _queryController.text.trim());
+    await _analyze(
+      inputType: 'text',
+      text: _queryController.text.trim(),
+      language: _selectedLanguage,
+    );
   }
 
   Future<void> _toggleVoice() async {
     if (_isListening) {
-      await _speech.stop();
+      final path = await _audioRecorder.stop();
       if (!mounted) return;
-      setState(() => _isListening = false);
-      if (_queryController.text.isNotEmpty) {
-        await _submitText();
+      setState(() {
+        _isListening = false;
+        _recordingPath = path;
+      });
+
+      if (_recordingPath != null) {
+        await _processVoiceTranscription(_recordingPath!);
       }
     } else {
-      bool available = await _speech.initialize();
-      if (available) {
+      if (await _audioRecorder.hasPermission()) {
+        final dir = await getTemporaryDirectory();
+        final path = '${dir.path}/forge_record_${DateTime.now().millisecondsSinceEpoch}.wav';
+
+        const config = RecordConfig(encoder: AudioEncoder.wav);
+
+        await _audioRecorder.start(config, path: path);
         if (!mounted) return;
-        setState(() => _isListening = true);
-        _speech.listen(
-          onResult: (val) => setState(() {
-            _queryController.text = val.recognizedWords;
-            if (val.hasConfidenceRating && val.confidence > 0) {
-              // Wait a bit before auto-submitting
-            }
-          }),
-        );
+        setState(() {
+          _isListening = true;
+          _queryController.text = 'Listening...';
+        });
       }
+    }
+  }
+
+  Future<void> _processVoiceTranscription(String path) async {
+    setState(() => _isLoading = true);
+    try {
+      final bytes = await File(path).readAsBytes();
+      final base64Audio = base64Encode(bytes);
+
+      final result = await ApiService().transcribeAudio(
+        audioBase64: base64Audio,
+        languageCode: _selectedLanguage,
+        audioFormat: 'wav',
+      );
+
+      final transcript = result['transcript'] ?? '';
+      final readyForAnalysis = result['ready_for_analysis'] ?? false;
+
+      if (!mounted) return;
+      setState(() {
+        _queryController.text = transcript;
+        _isLoading = false;
+      });
+
+      if (readyForAnalysis && transcript.isNotEmpty) {
+        await _analyze(inputType: 'voice_transcript', text: transcript, language: _selectedLanguage);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Transcription error: $e')),
+      );
     }
   }
 
@@ -81,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (photo != null) {
       final bytes = await photo.readAsBytes();
       final base64Image = base64Encode(bytes);
-      await _analyze(inputType: 'photo', photoBase64: base64Image);
+      await _analyze(inputType: 'photo', photoBase64: base64Image, language: _selectedLanguage);
     }
   }
 
@@ -91,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (image != null) {
       final bytes = await image.readAsBytes();
       final base64Image = base64Encode(bytes);
-      await _analyze(inputType: 'photo', photoBase64: base64Image);
+      await _analyze(inputType: 'photo', photoBase64: base64Image, language: _selectedLanguage);
     }
   }
 
@@ -99,6 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String inputType,
     String? text,
     String? photoBase64,
+    String language = 'en-IN',
   }) async {
     setState(() => _isLoading = true);
     try {
@@ -109,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
         photoBase64: photoBase64,
         lat: loc.lat,
         lng: loc.lng,
+        language: language,
       );
       if (!mounted) return;
       Navigator.push(
@@ -178,6 +223,38 @@ class _HomeScreenState extends State<HomeScreen> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: kSpaceXL),
+                      // Language Selector
+                      SizedBox(
+                        height: 32,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _languages.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: kSpaceSM),
+                          itemBuilder: (context, index) {
+                            final lang = _languages[index];
+                            final isSelected = _selectedLanguage == lang['code'];
+                            return GestureDetector(
+                              onTap: () => setState(() => _selectedLanguage = lang['code']!),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? kPrimary : kSurfaceContainer,
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  lang['name']!,
+                                  style: kDataXs.copyWith(
+                                    color: isSelected ? Colors.white : kSecondary,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: kSpaceMD),
                       // Search Section
                       Stack(
                         children: [

@@ -181,14 +181,23 @@ class StandardDetail {
 class FailureAnalysis {
   final String riskLevel;
   final List<FailureMode> failureModes;
+  final List<FailureMode> severeFailureModes;
   final String overallRecommendation;
 
-  FailureAnalysis({required this.riskLevel, required this.failureModes, required this.overallRecommendation});
+  FailureAnalysis({
+    required this.riskLevel,
+    required this.failureModes,
+    required this.severeFailureModes,
+    required this.overallRecommendation,
+  });
 
   factory FailureAnalysis.fromJson(Map<String, dynamic> json) {
     return FailureAnalysis(
       riskLevel: json['risk_level'] ?? '',
       failureModes: (json['failure_modes'] as List<dynamic>?)
+              ?.map((m) => FailureMode.fromJson(m))
+              .toList() ?? [],
+      severeFailureModes: (json['severe_failure_modes'] as List<dynamic>?)
               ?.map((m) => FailureMode.fromJson(m))
               .toList() ?? [],
       overallRecommendation: json['overall_recommendation'] ?? '',
@@ -199,6 +208,7 @@ class FailureAnalysis {
     return {
       'risk_level': riskLevel,
       'failure_modes': failureModes.map((m) => m.toJson()).toList(),
+      'severe_failure_modes': severeFailureModes.map((m) => m.toJson()).toList(),
       'overall_recommendation': overallRecommendation,
     };
   }

@@ -72,5 +72,49 @@ class ApiService {
       throw Exception('Failed to load projects. Status: ${response.statusCode}');
     }
   }
-}
 
+  /// Transcribe audio using Sarvam AI (server-side STT for Indian languages)
+  Future<Map<String, dynamic>> transcribeAudio({
+    required String audioBase64,
+    String languageCode = 'en-IN',
+    String audioFormat = 'wav',
+  }) async {
+    final response = await http.post(
+      Uri.parse('$kApiBaseUrl/api/voice/transcribe'),
+      headers: _auth.authHeaders,
+      body: jsonEncode({
+        'audio_base64': audioBase64,
+        'language_code': languageCode,
+        'audio_format': audioFormat,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Transcription failed. Status: ${response.statusCode}');
+    }
+  }
+
+  /// Synthesize speech from text using Sarvam AI (standalone TTS)
+  Future<String?> synthesizeSpeech({
+    required String text,
+    String languageCode = 'en-IN',
+  }) async {
+    final response = await http.post(
+      Uri.parse('$kApiBaseUrl/api/voice/synthesize'),
+      headers: _auth.authHeaders,
+      body: jsonEncode({
+        'text': text.length > 500 ? text.substring(0, 500) : text,
+        'language_code': languageCode,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['audio_base64'];
+    } else {
+      throw Exception('TTS failed. Status: ${response.statusCode}');
+    }
+  }
+}

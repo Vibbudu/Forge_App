@@ -32,6 +32,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
+  bool _isLoadingAudio = false;
   bool _isSaved = false;
   bool _isSaving = false;
 
@@ -50,7 +51,21 @@ class _ResultScreenState extends State<ResultScreen> {
       setState(() => _isPlaying = false);
     } else {
       try {
-        final bytes = base64Decode(widget.data.ttsAudioBase64!);
+        String? audioBase64 = widget.data.ttsAudioBase64;
+        
+        // If audio not pre-generated, fetch it now (standalone TTS)
+        if (audioBase64 == null) {
+          setState(() => _isLoadingAudio = true);
+          audioBase64 = await ApiService().synthesizeSpeech(
+            text: widget.data.recommendation.explanation,
+            languageCode: widget.data.ttsLanguage ?? 'en-IN',
+          );
+          setState(() => _isLoadingAudio = false);
+        }
+
+        if (audioBase64 == null) return;
+
+        final bytes = base64Decode(audioBase64);
         await _audioPlayer.play(BytesSource(bytes));
         if (!mounted) return;
         setState(() => _isPlaying = true);
@@ -60,8 +75,9 @@ class _ResultScreenState extends State<ResultScreen> {
         });
       } catch (e) {
         if (!mounted) return;
+        setState(() => _isLoadingAudio = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to play audio summary.')),
+          SnackBar(content: Text('Audio playback error: $e')),
         );
       }
     }
@@ -210,13 +226,18 @@ class _ResultScreenState extends State<ResultScreen> {
             Row(
               children: [
                 Expanded(child: Text(rec.name, style: kDisplayLg)),
-                if (widget.data.ttsAudioBase64 != null)
-                  IconButton(
-                    icon: Icon(_isPlaying ? Icons.stop_circle : Icons.play_circle_fill),
-                    color: kPrimary,
-                    iconSize: 40,
-                    onPressed: _playAudio,
-                  ),
+                if (widget.data.ttsAudioBase64 != null || true) // Show play button if TTS available or allowed to synthesize
+                  _isLoadingAudio 
+                    ? const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: kPrimary)),
+                      )
+                    : IconButton(
+                        icon: Icon(_isPlaying ? Icons.stop_circle : Icons.play_circle_fill),
+                        color: kPrimary,
+                        iconSize: 40,
+                        onPressed: _playAudio,
+                      ),
               ],
             ),
             const SizedBox(height: kSpaceSM),
@@ -240,7 +261,15 @@ class _ResultScreenState extends State<ResultScreen> {
             const SizedBox(height: kSpaceLG),
 
             // Failure Warning
-            if (fail.failureModes.isNotEmpty) ...[
+            if (fail.failureModes.isNotEmpty || fail.severeFailureModes.isNotEmpty) ...[
+              ...fail.severeFailureModes.map((mode) => Padding(
+                padding: const EdgeInsets.only(bottom: kSpaceSM),
+                child: FailureWarningCard(
+                  title: 'SEVERE: ${mode.type}',
+                  description: mode.description,
+                  severity: 'HIGH',
+                ),
+              )),
               ...fail.failureModes.map((mode) => Padding(
                 padding: const EdgeInsets.only(bottom: kSpaceSM),
                 child: FailureWarningCard(
