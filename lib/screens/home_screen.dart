@@ -73,7 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
         final dir = await getTemporaryDirectory();
         final path = '${dir.path}/forge_record_${DateTime.now().millisecondsSinceEpoch}.wav';
 
-        const config = RecordConfig(encoder: AudioEncoder.wav);
+        const config = RecordConfig(
+          encoder: AudioEncoder.wav,
+          sampleRate: 16000,
+          bitRate: 128000,
+          numChannels: 1,
+        );
 
         await _audioRecorder.start(config, path: path);
         if (!mounted) return;
