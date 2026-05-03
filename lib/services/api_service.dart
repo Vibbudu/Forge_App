@@ -157,11 +157,11 @@ class ApiService {
     String language = 'en-IN',
   }) async {
     final Map<String, dynamic> body = {
+      'image_base64': imageBase64,
       'text': text,
       'response_mode': responseMode,
       'language': language,
     };
-    if (imageBase64 != null) body['image_base64'] = imageBase64;
 
     final response = await http.post(
       Uri.parse('$kApiBaseUrl/api/chat/multimodal'),
