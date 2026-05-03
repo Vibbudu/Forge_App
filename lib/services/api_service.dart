@@ -161,7 +161,7 @@ class ApiService {
       'response_mode': responseMode,
       'language': language,
     };
-    if (imageBase64 != null) body['image_base_64'] = imageBase64;
+    if (imageBase64 != null) body['image_base64'] = imageBase64;
 
     final response = await http.post(
       Uri.parse('$kApiBaseUrl/api/chat/multimodal'),
