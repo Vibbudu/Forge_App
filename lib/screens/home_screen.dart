@@ -35,9 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
     {'code': 'en-IN', 'name': 'English'},
     {'code': 'hi-IN', 'name': 'Hindi'},
     {'code': 'kn-IN', 'name': 'Kannada'},
-    {'code': 'ta-IN', 'name': 'Tamil'},
-    {'code': 'te-IN', 'name': 'Telugu'},
-    {'code': 'ml-IN', 'name': 'Malayalam'},
   ];
 
   @override

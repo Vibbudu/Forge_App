@@ -22,17 +22,20 @@ class ApiService {
     required double lng,
     String language = 'en-IN',
   }) async {
+    final Map<String, dynamic> body = {
+      'input_type': inputType,
+      'location': {'lat': lat, 'lng': lng},
+      'language': language,
+    };
+
+    if (text != null) body['text'] = text;
+    if (photoBase64 != null) body['photo_base64'] = photoBase64;
+    if (advancedParams != null) body['advanced_params'] = advancedParams;
+
     final response = await http.post(
       Uri.parse('$kApiBaseUrl$kEndpointFullAnalysis'),
       headers: _auth.authHeaders,
-      body: jsonEncode({
-        'input_type': inputType,
-        'text': text,
-        'photo_base64': photoBase64,
-        'advanced_params': advancedParams,
-        'location': {'lat': lat, 'lng': lng},
-        'language': language,
-      }),
+      body: jsonEncode(body),
     );
     
     if (response.statusCode == 200) {
