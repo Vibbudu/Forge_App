@@ -10,7 +10,6 @@ import '../widgets/forge_app_bar.dart';
 import '../widgets/search_bar_widget.dart';
 import 'result_screen.dart';
 import 'advanced_config_screen.dart';
-import 'chat_screen.dart';
 import 'materials_screen.dart';
 import 'history_screen.dart';
 import '../services/api_service.dart';
@@ -127,16 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (photo != null) {
       final bytes = await photo.readAsBytes();
       final base64Image = base64Encode(bytes);
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            initialImageBase64: base64Image,
-            initialLanguage: _selectedLanguage,
-          ),
-        ),
-      );
+      await _analyze(inputType: 'photo', photoBase64: base64Image, language: _selectedLanguage);
     }
   }
 
@@ -146,16 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (image != null) {
       final bytes = await image.readAsBytes();
       final base64Image = base64Encode(bytes);
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            initialImageBase64: base64Image,
-            initialLanguage: _selectedLanguage,
-          ),
-        ),
-      );
+      await _analyze(inputType: 'photo', photoBase64: base64Image, language: _selectedLanguage);
     }
   }
 
@@ -300,49 +281,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: kSpaceXL),
                       Center(
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ChatScreen(initialLanguage: _selectedLanguage),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.chat_bubble_outline),
-                                label: const Text('Consult Forge Expert Chat'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
-                                  backgroundColor: kPrimaryContainer.withValues(alpha: 0.1),
-                                  foregroundColor: kPrimary,
-                                  elevation: 0,
-                                  side: const BorderSide(color: kPrimary),
-                                  textStyle: kLabelMd.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _navigateToAdvanced,
+                            icon: const Icon(Icons.tune),
+                            label: const Text('Advanced Configuration Mode'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
+                              backgroundColor: kSurfaceContainerLowest,
+                              foregroundColor: kSecondary,
+                              elevation: 2,
+                              side: const BorderSide(color: kOutlineVariant),
+                              textStyle: kLabelMd.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: kSpaceMD),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: _navigateToAdvanced,
-                                icon: const Icon(Icons.tune),
-                                label: const Text('Advanced Configuration Mode'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: kSpaceMD),
-                                  backgroundColor: kSurfaceContainerLowest,
-                                  foregroundColor: kSecondary,
-                                  elevation: 2,
-                                  side: const BorderSide(color: kOutlineVariant),
-                                  textStyle: kLabelMd.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: kSpaceMD),
