@@ -254,8 +254,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       _responseMode = _responseMode == 'CHAT' ? 'BREAKDOWN' : 'CHAT';
                     });
                   },
-                  backgroundColor: _responseMode == 'CHAT' ? kPrimary.withValues(alpha: 0.1) : kSuccess.withValues(alpha: 0.1),
-                  labelStyle: kDataXs.copyWith(color: _responseMode == 'CHAT' ? kPrimary : kSuccess),
+                  backgroundColor: _responseMode == 'CHAT' ? kPrimary.withValues(alpha: 0.1) : kSuccessColor.withValues(alpha: 0.1),
+                  labelStyle: kDataXs.copyWith(color: _responseMode == 'CHAT' ? kPrimary : kSuccessColor),
                 ),
                 const Spacer(),
                 if (_currentImageBase64 != null)
