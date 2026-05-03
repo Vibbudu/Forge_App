@@ -43,8 +43,6 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   void _playAudio() async {
-    if (widget.data.ttsAudioBase64 == null) return;
-    
     if (_isPlaying) {
       await _audioPlayer.stop();
       if (!mounted) return;
@@ -56,9 +54,11 @@ class _ResultScreenState extends State<ResultScreen> {
         // If audio not pre-generated, fetch it now (standalone TTS)
         if (audioBase64 == null) {
           setState(() => _isLoadingAudio = true);
+          // Use the language returned by backend, or fallback to en-IN
+          final lang = widget.data.ttsLanguage ?? 'en-IN';
           audioBase64 = await ApiService().synthesizeSpeech(
             text: widget.data.recommendation.explanation,
-            languageCode: widget.data.ttsLanguage ?? 'en-IN',
+            languageCode: lang,
           );
           setState(() => _isLoadingAudio = false);
         }

@@ -29,7 +29,7 @@ class ForgeResponse {
     required this.reportAvailable,
   });
 
-  factory ForgeResponse.fromJson(Map<String, dynamic> json) {
+  factory ForgeResponse.fromJson(Map<String, dynamic> json, {String? language}) {
     return ForgeResponse(
       success: json['success'] ?? false,
       recommendation: MaterialRecommendation.fromJson(json['recommendation'] ?? {}),
@@ -42,7 +42,7 @@ class ForgeResponse {
       vendors: VendorsResult.fromJson(json['vendors'] ?? {}),
       conflictWarning: ConflictWarning.fromJson(json['conflict_warning'] ?? {}),
       ttsAudioBase64: json['tts_audio_base64'],
-      ttsLanguage: json['tts_language'],
+      ttsLanguage: json['tts_language'] ?? language,
       reportAvailable: json['report_available'] ?? false,
     );
   }

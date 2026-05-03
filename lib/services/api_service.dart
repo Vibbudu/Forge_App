@@ -36,7 +36,7 @@ class ApiService {
     );
     
     if (response.statusCode == 200) {
-      return ForgeResponse.fromJson(jsonDecode(response.body));
+      return ForgeResponse.fromJson(jsonDecode(response.body), language: language);
     } else {
       throw Exception('Failed to analyze query. Status: ${response.statusCode}');
     }
