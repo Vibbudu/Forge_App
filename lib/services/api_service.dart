@@ -38,7 +38,16 @@ class ApiService {
     if (response.statusCode == 200) {
       return ForgeResponse.fromJson(jsonDecode(response.body), language: language);
     } else {
-      throw Exception('Failed to analyze query. Status: ${response.statusCode}');
+      String errorMessage = 'Failed to analyze query. Status: ${response.statusCode}';
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData['error'] != null) {
+          errorMessage = errorData['error'];
+        } else if (errorData['message'] != null) {
+          errorMessage = errorData['message'];
+        }
+      } catch (_) {}
+      throw Exception(errorMessage);
     }
   }
 
@@ -53,7 +62,12 @@ class ApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to save project. Status: ${response.statusCode}');
+      String errorMessage = 'Failed to save project. Status: ${response.statusCode}';
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData['error'] != null) errorMessage = errorData['error'];
+      } catch (_) {}
+      throw Exception(errorMessage);
     }
   }
 
@@ -69,7 +83,12 @@ class ApiService {
       final projects = data['projects'] ?? data;
       return List<Map<String, dynamic>>.from(projects is List ? projects : []);
     } else {
-      throw Exception('Failed to load projects. Status: ${response.statusCode}');
+      String errorMessage = 'Failed to load projects. Status: ${response.statusCode}';
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData['error'] != null) errorMessage = errorData['error'];
+      } catch (_) {}
+      throw Exception(errorMessage);
     }
   }
 
@@ -92,7 +111,12 @@ class ApiService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Transcription failed. Status: ${response.statusCode}');
+      String errorMessage = 'Transcription failed. Status: ${response.statusCode}';
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData['error'] != null) errorMessage = errorData['error'];
+      } catch (_) {}
+      throw Exception(errorMessage);
     }
   }
 
@@ -114,7 +138,12 @@ class ApiService {
       final data = jsonDecode(response.body);
       return data['audio_base64'];
     } else {
-      throw Exception('TTS failed. Status: ${response.statusCode}');
+      String errorMessage = 'TTS failed. Status: ${response.statusCode}';
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData['error'] != null) errorMessage = errorData['error'];
+      } catch (_) {}
+      throw Exception(errorMessage);
     }
   }
 }
